@@ -1,0 +1,247 @@
+<h2>Estimez le prix de votre vidange grâce à OILbot</h2>
+
+<div>
+  <div id="msgContainer">
+    <ng-container  *ngFor="let message of messages | async">
+      <!-- FACEBOOK MESSENGER || DEFAULT Response : "Text Response" ( TYPE = 0 ) -->
+      <div *ngIf="message.type ==='0' && message.sentBy === 'bot'" class="messageBot">
+        <img style="width:3%;  border-radius: 50%;" src="../../assets/img/cashy.jpg">
+        <div class="message" [ngClass]="{ 'from': message.sentBy === 'bot','to': message.sentBy === 'user' }"> {{ message.content }}</div>
+      </div>
+
+      <div *ngIf="message.type ==='0' && message.sentBy === 'user'" class="messageUser">
+        <div class="message" [ngClass]="{ 'from': message.sentBy === 'bot','to': message.sentBy === 'user' }"> {{ message.content }}</div>
+      </div>
+
+      <!-- FACEBOOK MESSENGER Response : "Card" ( TYPE = 1 ) -->
+      <div *ngIf="message.type ==='1'">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>{{ message.c.title }}</mat-card-title>
+          </mat-card-header>
+          <img mat-card-image src="{{ message.c.imageUrl }}">
+          <mat-card-content>
+            <p>{{ message.c.description }}</p>
+          </mat-card-content>
+          <mat-card-actions>
+            <ng-container *ngFor="let b of message.c.buttons ">
+              <button mat-button color="primary">{{ b.content }}</button>
+            </ng-container>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+
+      <!-- FACEBOOK MESSENGER Response : "Quick Replies" ( TYPE = 2) -->
+      <div *ngIf="message.type ==='2'">
+        <mat-card-actions>
+          <ng-container *ngFor="let b of message.b.buttons ">
+            <button mat-button (click)="actionButton(b.content, message.b.title)" color="primary">{{ b.content }}</button>
+          </ng-container>
+        </mat-card-actions>
+      </div>
+
+      <!-- FACEBOOK MESSENGER Response : "Image" ( TYPE = 3 ) -->
+      <div *ngIf="message.type ==='3'">
+        <mat-card>
+          <img mat-card-image src="{{ message.i.url }}">
+        </mat-card>
+      </div>
+
+      <!-- "Quick Replies"  Confirmation Simple "SANS TITRE"( TYPE = 5) -->
+      <div *ngIf="message.type ==='5'">
+        <mat-card-actions>
+          <ng-container *ngFor="let b of message.b.buttons ">
+            <button mat-button (click)="confirmationActionButton(b.content, message.b.title)" color="primary">{{ b.content }}</button>
+          </ng-container>
+        </mat-card-actions>
+      </div>
+
+      <!-- DIV RECHERCHE DE VEHICULE PAR "MARQUE" -->
+      <div *ngIf="message.type ==='8'">
+        <div class="containerMarque">
+          <form class="example-form">
+            <mat-form-field class="example-full-width">
+              <input style="border:0;" type="text" placeholder="Votre Marque" matInput [formControl]="myControlMarques" [matAutocomplete]="auto">
+              <mat-autocomplete #auto="matAutocomplete">
+                <mat-option (onSelectionChange)="changeMarque($event, option.value)" *ngFor="let option of filtrageMarques | async" [value]="option.viewValue">
+                  {{option.viewValue}}
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+          </form>
+          <form class="example-form">
+            <mat-form-field class="example-full-width">
+              <input style="border:0;" type="text" placeholder="Votre Modele" matInput [formControl]="myControlModeles" [matAutocomplete]="autoTest">
+              <mat-autocomplete #autoTest="matAutocomplete">
+                <mat-option (onSelectionChange)="changeModeles($event, option.viewValue)" *ngFor="let option of filtrageModeles | async" [value]="option.viewValue">
+                  {{option.viewValue}}
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+          </form>
+          <form class="example-form">
+            <mat-form-field class="example-full-width">
+              <input style="border:0;"type="text" placeholder="Votre Cylindre" matInput [formControl]="myControlCylindres" [matAutocomplete]="autoTest1">
+              <mat-autocomplete #autoTest1="matAutocomplete">
+                <mat-option (onSelectionChange)="changeCylindre($event, option.value)" *ngFor="let option of filtrageCylindres | async" [value]="option.viewValue">
+                  {{option.viewValue}}
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+          </form>
+          <div>
+            <button style="margin:auto;" [disabled]="!marqueIsOK"  mat-button (click)="ValiderMarque()">Valider</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIV RECHERCHE DE VEHICULE PAR "IMMATRICULATION" -->
+      <div *ngIf="message.type ==='7'">
+        <div class="containerDiv">
+          <div class="englobe">
+            <div class="content" >
+              <input  type="text" [(ngModel)]="carImmatriculation" maxlength="8" name="carImmatriculation" style="text-align:center"
+                      (ngModelChange)="checkPlaque()" class="text-uppercase"
+                      placeholder="AA - 123 - CD"/>
+            </div>
+          </div>
+          <div>
+            <button [disabled]="!plaqueIsOK" mat-button (click)="ValiderImmatriculation()">Valider</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIV LISTE DES MAGASINS -->
+      <div *ngIf="message.type ==='4'">
+          <div class="scrolling-wrapper-flexbox">
+            <ng-container *ngFor="let magasin of message.magasin.mag">
+              <div class="containerMag">
+                <h4 style="color: #cf0226;">{{ magasin.ville }}</h4>
+                <div>
+                  <p style="color: green; margin-bottom: 0px;">à {{ magasin.km}} km</p>
+                  <p style="color: #2a2f6e; margin-bottom: 0px;">{{ magasin.adresse }}</p>
+                  <p style="color: #2a2f6e; margin-bottom: 1%;">{{ magasin.codePostal }} {{ magasin.ville }}</p>
+                </div>
+                <button style="background-color: #cf0226;border: #cf0226;display: block;margin : auto;" (click)="magasinChoisi(magasin, magasin.idStore)" [disabled]="statusMag">Choix Magasin</button>
+              </div>
+            </ng-container>
+          </div>
+      </div>
+
+      <!-- DIV LISTE DES FILTRES -->
+      <div *ngIf="message.type ==='10'" >
+        <div class="scrolling-wrapper-flexbox">
+          <ng-container  *ngFor="let filtre of message.filtre">
+            <div class="containerFiltre">
+              <div style="display: flex;   flex: 0 0 auto;">
+                <img style="max-width: 150px; max-height: auto;"src="{{ filtre.image }}">
+                <div style="display: flex; flex-direction: column;">
+                  <h5 style="color: #20256c;margin-bottom: 0px;"><strong>FILTRE À HUILE</strong></h5>
+                  <h5 style="color: #20256c;margin-bottom: 2%;">{{ filtre.libelle }}</h5>
+                  <h4 style="color: #cf0226;">{{ filtre.prix }} €</h4>
+                </div>
+              </div>
+
+              <div class="caracsFiltre">
+                <p style="margin-bottom: 1%;">{{ filtre.caracteristiques.date }}</p>
+                <h5 style="margin: 3%;"><strong>CARACTÉRISTIQUES</strong></h5>
+                <hr>
+                <p style="margin-bottom: 1%;"><strong>Hauteur [mm] :</strong> {{ filtre.caracteristiques.hauteur }}</p>
+                <p style="margin-bottom: 1%;"><strong>Diamètre(s) [mm] :</strong> {{ filtre.caracteristiques.diametreInterieur }}</p>
+                <p style="margin-bottom: 1%;"><strong>Diamètre extérieur [mm] :</strong> {{ filtre.caracteristiques.diametreExterieur }}</p>
+                <p style="margin-bottom: 1%;"><strong>Taraudage 1 [mm] : </strong> {{ filtre.caracteristiques.taraudage }}</p>
+              </div>
+
+              <div>
+                <button style="background-color: #cf0226;border: #cf0226;display: block;margin : auto; width: 94%" (click)="filtreChoisi(filtre)" [disabled]="statusFiltre">Choix du filtre</button>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- DIV LES BONS PLANS -->
+      <div *ngIf="message.type ==='13'">
+        <div class="scrolling-wrapper-flexbox"  >
+          <ng-container *ngFor="let item of message.filtre; let i = index" >
+            <div class="containerFiltre">
+              <h2 style="text-align: center; color: #20256c;">Bon Plan n°{{ i+1 }}</h2>
+              <h2 style="text-align: center; color: #cf0226;"> <strong>{{ getTotalPrix(item.prix, filtreSelected.prix) | number:'1.2-2'}} €</strong></h2>
+              <img style="max-width: 150px; height: auto; margin: auto; margin-bottom: 0px; margin-top: 0px;" src="{{ item.image }}">
+              <button style="background-color: #cf0226;border: #cf0226;display: block;margin : auto; margin-bottom: 0px; margin-top: 0px; width: 94%" (click)="bonPlanChoisi(item)"  [disabled]="statusBonPlans">Choisir ce forfait</button>
+              <div class="caracsFiltre">
+                <h5 style="margin: 3%;"><strong>CE FORFAIT COMPREND :</strong></h5>
+                <hr>
+                <p style="margin-bottom: 1%;">{{filtreSelected.libelle}}</p>
+                <p style="margin-bottom: 1%;">Une huile moteur <strong>{{ item.libelle }}</strong></p>
+                <p style="margin-bottom: 1%;">Un joint de vidange</p>
+                <p style="margin-bottom: 1%;">La main d'oeuvre pour la vidange et le changement du filtre</p>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <p style="text-align:center; color: #20256c;">
+          Ces prix estimatifs sont indicatifs au {{ getToday() }}
+          Les prix sont susceptibles de modifications sans préavis ni notification. Nous vous invitons à vérifier en magasin le prix des produits le jour de votre vidange.
+        </p>
+      </div>
+
+      <!-- DIV INSERER UN MAIL -->
+      <div *ngIf="message.type ==='11'">
+        <div class="containerDiv">
+          <div><input style="margin-bottom:0px;" type="email" [(ngModel)]="email" name="email" (ngModelChange)="checkMail()" placeholder="Email"/></div>
+          <div><button style="margin-left:25%;" [disabled]="!mailIsOK" mat-button (click)="validerEmail()">Valider</button></div>
+        </div>
+      </div>
+
+      <!-- DIV INSERER UN AVIS -->
+      <div *ngIf="message.type ==='12'">
+        <div class="containerDiv">
+          <form class="example-form">
+            <h5 style="color: #20256c; margin-bottom: 0px;">Qualité des échanges : </h5>
+            <ngb-rating max=5 [(rate)]="currentRate">
+              <ng-template let-fill="fill" let-index="index">
+                <span class="star" [class.filled]="fill === 100">&#9733;</span>
+              </ng-template>
+            </ngb-rating>
+
+            <h5 style="color: #20256c; margin-bottom: 0px;">Commentaire (optionnel) : </h5>
+            <mat-form-field class="example-full-width">
+              <textarea matInput #messageAvis maxlength="256"></textarea>
+              <mat-hint align="start"></mat-hint>
+              <mat-hint align="end"> {{messageAvis.value.length}} / 256</mat-hint>
+            </mat-form-field>
+
+            <div>
+              <button style="background-color: #cf0226;border: #cf0226;display: block;margin : auto; width: 100%" (click)="validerAvis(currentRate, messageAvis.value)" [disabled]="currentRate == 0">Envoyer mon avis</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- DIV RECHERCHE DE MAGASIN PAR "CODE POSTAL" -->
+      <div *ngIf="message.type ==='14'">
+        <div class="containerDiv" >
+          <div><input style="margin-bottom:0px;" type="text" [(ngModel)]="codePostal" name="codePostal" maxlength="5" (ngModelChange)="checkCodePostal()"placeholder="Code Postal"></div>
+          <div><button  style="margin-left:25%;" [disabled]="!codePostalIsOK" mat-button (click)="validerCodePostal()">Valider</button></div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+
+
+<!-- Apparition du gif " en cours d'écriture"  -->
+  <div *ngIf="showGif">
+    <img src="../../assets/img/3pointsGif.gif" />
+  </div>
+
+<!-- Champs de discussion avec le bot  -->
+  <div *ngIf="discussionInput" style="margin: 20px;">
+    <label for="nameField" >Votre message</label>
+    <input [(ngModel)]="formulaireMessage" (keyup.enter)="sendMessage()" type="text">
+    <button mat-button (click)="sendMessage()">Envoyer</button>
+  </div>
+
+</div>
